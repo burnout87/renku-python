@@ -29,7 +29,6 @@ class IGitAPIProvider(ABC):
         folders: List[Union[Path, str]],
         target_folder: Union[Path, str],
         remote: str,
-        token: str,
         branch: Optional[str] = None,
     ):
         """Download files through a remote Git API."""

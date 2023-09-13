@@ -23,9 +23,9 @@ from typing import Generator, List, Optional, Union
 import gitlab
 
 from renku.core import errors
+from renku.core.interface.git_api_provider import IGitAPIProvider
 from renku.core.util.os import delete_dataset_file
 from renku.domain_model.git import GitURL
-from renku.ui.service.interfaces.git_api_provider import IGitAPIProvider
 from renku.ui.service.logger import service_log
 
 
@@ -43,13 +43,16 @@ class GitlabAPIProvider(IGitAPIProvider):
         errors.AuthenticationError: If the bearer token is invalid in any way.
     """
 
+    def __init__(self, token: str):
+        """Init gitlab provider."""
+        self.token = token
+
     def download_files_from_api(
         self,
         files: List[Union[Path, str]],
         folders: List[Union[Path, str]],
         target_folder: Union[Path, str],
         remote: str,
-        token: str,
         branch: Optional[str] = None,
     ):
         """Download files through a remote Git API.
@@ -59,7 +62,6 @@ class GitlabAPIProvider(IGitAPIProvider):
             folders(List[Union[Path, str]]): Folders to download.
             target_folder(Union[Path, str]): Destination to save downloads to.
             remote(str): Git remote URL.
-            token(str): Gitlab API token.
             branch(Optional[str]): Git reference (Default value = None).
         """
         if not branch:
@@ -69,7 +71,7 @@ class GitlabAPIProvider(IGitAPIProvider):
 
         git_data = GitURL.parse(remote)
         try:
-            gl = gitlab.Gitlab(git_data.instance_url, oauth_token=token)
+            gl = gitlab.Gitlab(git_data.instance_url, oauth_token=self.token)
             project = gl.projects.get(f"{git_data.owner}/{git_data.name}")
         except gitlab.GitlabAuthenticationError:
             # NOTE: Invalid or expired tokens fail even on public projects. Let's give it a try without tokens
